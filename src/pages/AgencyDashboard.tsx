@@ -18,9 +18,9 @@ import type { DateFilterType, DateRange } from '@/types/finance';
 
 export const AgencyDashboard = () => {
   const { data, isLoading, error } = useFinanceData();
-  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
+  const [filterType, setFilterType] = useState<DateFilterType>('daily');
   const [dateRange, setDateRange] = useState<DateRange>({ 
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1), 
+    from: new Date(), 
     to: new Date() 
   });
 
@@ -174,30 +174,14 @@ export const AgencyDashboard = () => {
         <PaymentModeChart data={paymentModeData} />
       </div>
 
-      {/* Agency Insights */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatsCard
-          title="Revenue Metrics"
-          stats={[
-            { label: 'MRR', value: stats.recurringRevenue, isCurrency: true },
-            { label: 'Profit Margin', value: stats.profitMargin, isPercentage: true },
-          ]}
-        />
-        <StatsCard
-          title="Expense Metrics"
-          stats={[
-            { label: 'Burn Rate', value: stats.burnRate, isCurrency: true },
-            { label: 'Total Clients', value: stats.clientCount },
-          ]}
-        />
-        <StatsCard
-          title="Portfolio"
-          stats={[
-            { label: 'Total Transactions', value: (data?.agencyIncome?.length || 0) + (data?.agencyExpense?.length || 0) },
-            { label: 'Recurring Clients', value: data?.agencyIncome?.filter(i => i.recurring).length || 0 },
-          ]}
-        />
-      </div>
+      {/* Portfolio Stats */}
+      <StatsCard
+        title="Portfolio"
+        stats={[
+          { label: 'Total Transactions', value: (data?.agencyIncome?.length || 0) + (data?.agencyExpense?.length || 0) },
+          { label: 'Recurring Clients', value: data?.agencyIncome?.filter(i => i.recurring).length || 0 },
+        ]}
+      />
     </div>
   );
 };
