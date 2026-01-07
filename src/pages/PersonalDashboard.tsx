@@ -21,9 +21,9 @@ import type { DateFilterType, DateRange } from '@/types/finance';
 
 export const PersonalDashboard = () => {
   const { data, isLoading, error } = useFinanceData();
-  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
+  const [filterType, setFilterType] = useState<DateFilterType>('daily');
   const [dateRange, setDateRange] = useState<DateRange>({ 
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1), 
+    from: new Date(), 
     to: new Date() 
   });
 
