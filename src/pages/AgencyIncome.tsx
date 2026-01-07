@@ -21,9 +21,9 @@ const columns = [
 
 export const AgencyIncomePage = () => {
   const { data, isLoading, error } = useAgencyIncome();
-  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
+  const [filterType, setFilterType] = useState<DateFilterType>('daily');
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+    from: new Date(),
     to: new Date()
   });
 
