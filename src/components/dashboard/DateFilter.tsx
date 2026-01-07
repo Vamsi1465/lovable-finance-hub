@@ -4,7 +4,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CalendarIcon } from 'lucide-react';
-import { format, subDays, startOfWeek, startOfMonth } from 'date-fns';
+import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import type { DateFilterType, DateRange } from '@/types/finance';
 import { cn } from '@/lib/utils';
 
@@ -23,22 +23,34 @@ export const DateFilter = ({
 }: DateFilterProps) => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
+  // Calculate date ranges based on filter type:
+  // Daily: from = today, to = today (same day)
+  // Weekly: from = Monday, to = Sunday (current week, Monday as first day)
+  // Monthly: from = 1st of month, to = last day of month
+  // Custom: user-selected range
   const handleFilterTypeChange = (type: DateFilterType) => {
     onFilterTypeChange(type);
     
     const today = new Date();
     let from: Date | undefined;
-    let to: Date | undefined = today;
+    let to: Date | undefined;
 
     switch (type) {
       case 'daily':
+        // Today only: from = today, to = today
         from = today;
+        to = today;
         break;
       case 'weekly':
-        from = startOfWeek(today);
+        // Monday to Sunday of current week
+        // startOfWeek with weekStartsOn: 1 means Monday
+        from = startOfWeek(today, { weekStartsOn: 1 });
+        to = endOfWeek(today, { weekStartsOn: 1 });
         break;
       case 'monthly':
+        // 1st to last day of current month
         from = startOfMonth(today);
+        to = endOfMonth(today);
         break;
       case 'custom':
         // Keep existing range for custom
@@ -95,6 +107,7 @@ export const DateFilter = ({
                   onDateRangeChange({ from: range?.from, to: range?.to });
                 }}
                 numberOfMonths={2}
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>

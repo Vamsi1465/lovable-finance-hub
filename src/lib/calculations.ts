@@ -193,8 +193,13 @@ export const getRecentTransactions = (
     })
     .slice(0, limit);
 };
-
 // Filter data by date range
+// Date format in sheet: YYYY-MM-DD (e.g., 2026-01-07)
+// Comparison: Date-only (ignores time)
+// - Daily: from = today 00:00:00, to = today 23:59:59
+// - Weekly: from = Monday 00:00:00, to = Sunday 23:59:59
+// - Monthly: from = 1st 00:00:00, to = last day 23:59:59
+// - Custom: user-selected range
 export const filterByDateRange = <T extends { date: string }>(
   data: T[],
   from: Date | undefined,
@@ -204,10 +209,20 @@ export const filterByDateRange = <T extends { date: string }>(
   
   return data.filter(item => {
     const itemDate = parseDate(item.date);
-    if (!itemDate) return true;
+    if (!itemDate) return false; // Exclude items with invalid dates
     
-    if (from && itemDate < from) return false;
-    if (to && itemDate > to) return false;
+    // Normalize to date-only comparison (set time to midnight)
+    const itemDateOnly = new Date(itemDate.getFullYear(), itemDate.getMonth(), itemDate.getDate());
+    
+    if (from) {
+      const fromDateOnly = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+      if (itemDateOnly < fromDateOnly) return false;
+    }
+    
+    if (to) {
+      const toDateOnly = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+      if (itemDateOnly > toDateOnly) return false;
+    }
     
     return true;
   });
