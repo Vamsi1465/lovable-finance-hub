@@ -24,7 +24,9 @@ import {
   ChevronsRight,
   Search,
   Download,
-  ArrowUpDown
+  ArrowUpDown,
+  Pencil,
+  Plus
 } from 'lucide-react';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
@@ -43,6 +45,8 @@ interface DataTableProps<T> {
   columns: Column<T>[];
   searchKey?: keyof T;
   pageSize?: number;
+  onEdit?: (item: T, index: number) => void;
+  onAdd?: () => void;
 }
 
 export function DataTable<T extends Record<string, any>>({ 
@@ -50,7 +54,9 @@ export function DataTable<T extends Record<string, any>>({
   data, 
   columns, 
   searchKey,
-  pageSize = 20 
+  pageSize = 20,
+  onEdit,
+  onAdd
 }: DataTableProps<T>) {
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<keyof T | null>(null);
@@ -137,6 +143,13 @@ export function DataTable<T extends Record<string, any>>({
     }
   };
 
+  // Find original index in data array
+  const getOriginalIndex = (item: T): number => {
+    return data.findIndex(d => 
+      Object.keys(d).every(key => d[key] === item[key])
+    );
+  };
+
   return (
     <Card className="glass-card">
       <CardHeader className="pb-4">
@@ -159,6 +172,13 @@ export function DataTable<T extends Record<string, any>>({
               </div>
             )}
             
+            {onAdd && (
+              <Button variant="default" size="sm" onClick={onAdd}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add
+              </Button>
+            )}
+            
             <Button variant="outline" size="sm" onClick={exportToCSV}>
               <Download className="h-4 w-4 mr-2" />
               Export
@@ -172,6 +192,9 @@ export function DataTable<T extends Record<string, any>>({
           <Table>
             <TableHeader>
               <TableRow>
+                {onEdit && (
+                  <TableHead className="w-[60px]">Actions</TableHead>
+                )}
                 {columns.map((column) => (
                   <TableHead 
                     key={String(column.key)}
@@ -195,7 +218,7 @@ export function DataTable<T extends Record<string, any>>({
               {paginatedData.length === 0 ? (
                 <TableRow>
                   <TableCell 
-                    colSpan={columns.length} 
+                    colSpan={columns.length + (onEdit ? 1 : 0)} 
                     className="text-center py-8 text-muted-foreground"
                   >
                     No data found
@@ -204,6 +227,18 @@ export function DataTable<T extends Record<string, any>>({
               ) : (
                 paginatedData.map((item, index) => (
                   <TableRow key={index} className="hover:bg-muted/50">
+                    {onEdit && (
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => onEdit(item, getOriginalIndex(item))}
+                          className="h-8 w-8"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    )}
                     {columns.map((column) => (
                       <TableCell 
                         key={String(column.key)} 

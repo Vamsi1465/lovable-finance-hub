@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Building2, TrendingUp, TrendingDown, RefreshCw, AlertCircle } from 'lucide-react';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { DateFilter } from '@/components/dashboard/DateFilter';
@@ -18,10 +19,10 @@ import type { DateFilterType, DateRange } from '@/types/finance';
 
 export const AgencyDashboard = () => {
   const { data, isLoading, error } = useFinanceData();
-  const [filterType, setFilterType] = useState<DateFilterType>('daily');
+  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
   const [dateRange, setDateRange] = useState<DateRange>({ 
-    from: new Date(), 
-    to: new Date() 
+    from: startOfMonth(new Date()), 
+    to: endOfMonth(new Date()) 
   });
 
   const filteredIncome = useMemo(() => {

@@ -1,12 +1,15 @@
 import { useState, useMemo } from 'react';
 import { DollarSign, RefreshCw, Users } from 'lucide-react';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { useAgencyIncome } from '@/hooks/useFinanceData';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { DateFilter } from '@/components/dashboard/DateFilter';
 import { DataTable } from '@/components/tables/DataTable';
+import { TransactionEditDialog } from '@/components/tables/TransactionEditDialog';
 import { CategoryPieChart } from '@/components/dashboard/CategoryPieChart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { filterByDateRange, getCategoryBreakdown } from '@/lib/calculations';
+import { useToast } from '@/hooks/use-toast';
 import type { DateFilterType, DateRange, AgencyIncome } from '@/types/finance';
 
 const columns = [
@@ -21,11 +24,17 @@ const columns = [
 
 export const AgencyIncomePage = () => {
   const { data, isLoading, error } = useAgencyIncome();
-  const [filterType, setFilterType] = useState<DateFilterType>('daily');
+  const { toast } = useToast();
+  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(),
-    to: new Date()
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date())
   });
+
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<AgencyIncome | null>(null);
+  const [editMode, setEditMode] = useState<'edit' | 'add'>('edit');
 
   const filteredData = useMemo(() => {
     return filterByDateRange(data, dateRange.from, dateRange.to);
@@ -54,6 +63,27 @@ export const AgencyIncomePage = () => {
       recurring: item.recurring ? 'Yes' : 'No',
     }));
   }, [filteredData]);
+
+  const handleEdit = (item: any, index: number) => {
+    // Convert back to original format for editing
+    const original = filteredData[index];
+    setSelectedTransaction(original);
+    setEditMode('edit');
+    setEditDialogOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedTransaction(null);
+    setEditMode('add');
+    setEditDialogOpen(true);
+  };
+
+  const handleSave = (updatedData: Record<string, any>) => {
+    toast({
+      title: editMode === 'edit' ? 'Transaction Updated' : 'Transaction Added',
+      description: 'Changes saved locally. To persist changes, update your Google Sheet directly.',
+    });
+  };
 
   if (error) {
     return (
@@ -121,12 +151,24 @@ export const AgencyIncomePage = () => {
         data={tableData}
         columns={columns}
         searchKey="clientName"
+        onEdit={handleEdit}
+        onAdd={handleAdd}
       />
 
       {/* Service Chart */}
       <div className="max-w-lg">
         <CategoryPieChart title="Revenue by Service" data={serviceBreakdown} />
       </div>
+
+      {/* Edit Dialog */}
+      <TransactionEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        transaction={selectedTransaction}
+        transactionType="agencyIncome"
+        onSave={handleSave}
+        mode={editMode}
+      />
     </div>
   );
 };
