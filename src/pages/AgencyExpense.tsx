@@ -3,7 +3,6 @@ import { Receipt, RefreshCw, Building } from 'lucide-react';
 import { useAgencyExpense } from '@/hooks/useFinanceData';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { DateFilter } from '@/components/dashboard/DateFilter';
-import { FilterDropdowns } from '@/components/dashboard/FilterDropdowns';
 import { DataTable } from '@/components/tables/DataTable';
 import { CategoryPieChart } from '@/components/dashboard/CategoryPieChart';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,36 +21,15 @@ const columns = [
 
 export const AgencyExpensePage = () => {
   const { data, isLoading, error } = useAgencyExpense();
-  
-  // Default to monthly
-  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
+  const [filterType, setFilterType] = useState<DateFilterType>('daily');
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-    to: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+    from: new Date(),
+    to: new Date()
   });
-  
-  // Category and Payment Method filters
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('All');
-
-  const allCategories = useMemo(() => {
-    return data?.map(e => e.category) || [];
-  }, [data]);
-
-  const allPaymentMethods = useMemo(() => {
-    return data?.map(e => e.paymentMode) || [];
-  }, [data]);
 
   const filteredData = useMemo(() => {
-    let filtered = filterByDateRange(data, dateRange.from, dateRange.to);
-    if (selectedCategory !== 'All') {
-      filtered = filtered.filter(e => e.category === selectedCategory);
-    }
-    if (selectedPaymentMethod !== 'All') {
-      filtered = filtered.filter(e => e.paymentMode === selectedPaymentMethod);
-    }
-    return filtered;
-  }, [data, dateRange, selectedCategory, selectedPaymentMethod]);
+    return filterByDateRange(data, dateRange.from, dateRange.to);
+  }, [data, dateRange]);
 
   const totalExpense = useMemo(() => {
     return filteredData.reduce((sum, item) => sum + item.amount, 0);
@@ -130,22 +108,12 @@ export const AgencyExpensePage = () => {
       </div>
 
       {/* Date Filter */}
-      <div className="space-y-4">
-        <DateFilter
-          filterType={filterType}
-          dateRange={dateRange}
-          onFilterTypeChange={setFilterType}
-          onDateRangeChange={setDateRange}
-        />
-        <FilterDropdowns
-          categories={allCategories}
-          paymentMethods={allPaymentMethods}
-          selectedCategory={selectedCategory}
-          selectedPaymentMethod={selectedPaymentMethod}
-          onCategoryChange={setSelectedCategory}
-          onPaymentMethodChange={setSelectedPaymentMethod}
-        />
-      </div>
+      <DateFilter
+        filterType={filterType}
+        dateRange={dateRange}
+        onFilterTypeChange={setFilterType}
+        onDateRangeChange={setDateRange}
+      />
 
       {/* Data Table */}
       <DataTable
