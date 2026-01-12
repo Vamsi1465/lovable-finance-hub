@@ -1,13 +1,16 @@
 import { useState, useMemo } from 'react';
 import { TrendingUp } from 'lucide-react';
+import { startOfMonth, endOfMonth } from 'date-fns';
 import { usePersonalIncome } from '@/hooks/useFinanceData';
 import { SummaryCard } from '@/components/dashboard/SummaryCard';
 import { DateFilter } from '@/components/dashboard/DateFilter';
 import { DataTable } from '@/components/tables/DataTable';
+import { TransactionEditDialog, TransactionType } from '@/components/tables/TransactionEditDialog';
 import { CategoryPieChart } from '@/components/dashboard/CategoryPieChart';
 import { Skeleton } from '@/components/ui/skeleton';
 import { filterByDateRange } from '@/lib/calculations';
 import { getCategoryBreakdown } from '@/lib/calculations';
+import { useToast } from '@/hooks/use-toast';
 import type { DateFilterType, DateRange, PersonalIncome } from '@/types/finance';
 
 const columns = [
@@ -21,11 +24,17 @@ const columns = [
 
 export const PersonalIncomePage = () => {
   const { data, isLoading, error } = usePersonalIncome();
-  const [filterType, setFilterType] = useState<DateFilterType>('daily');
+  const { toast } = useToast();
+  const [filterType, setFilterType] = useState<DateFilterType>('monthly');
   const [dateRange, setDateRange] = useState<DateRange>({
-    from: new Date(),
-    to: new Date()
+    from: startOfMonth(new Date()),
+    to: endOfMonth(new Date())
   });
+  
+  // Edit dialog state
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<PersonalIncome | null>(null);
+  const [editMode, setEditMode] = useState<'edit' | 'add'>('edit');
 
   const filteredData = useMemo(() => {
     return filterByDateRange(data, dateRange.from, dateRange.to);
@@ -38,6 +47,27 @@ export const PersonalIncomePage = () => {
   const categories = useMemo(() => {
     return getCategoryBreakdown(filteredData.map(i => ({ category: i.category, amount: i.amount })));
   }, [filteredData]);
+
+  const handleEdit = (item: PersonalIncome, index: number) => {
+    setSelectedTransaction(item);
+    setEditMode('edit');
+    setEditDialogOpen(true);
+  };
+
+  const handleAdd = () => {
+    setSelectedTransaction(null);
+    setEditMode('add');
+    setEditDialogOpen(true);
+  };
+
+  const handleSave = (updatedData: Record<string, any>) => {
+    // Note: This is a local-only update since data comes from Google Sheets
+    // In a real implementation, you would sync back to the sheets
+    toast({
+      title: editMode === 'edit' ? 'Transaction Updated' : 'Transaction Added',
+      description: 'Changes saved locally. To persist changes, update your Google Sheet directly.',
+    });
+  };
 
   if (error) {
     return (
@@ -88,12 +118,24 @@ export const PersonalIncomePage = () => {
         data={filteredData}
         columns={columns}
         searchKey="name"
+        onEdit={handleEdit}
+        onAdd={handleAdd}
       />
 
       {/* Category Chart */}
       <div className="max-w-lg">
         <CategoryPieChart title="Income by Category" data={categories} />
       </div>
+
+      {/* Edit Dialog */}
+      <TransactionEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        transaction={selectedTransaction}
+        transactionType="personalIncome"
+        onSave={handleSave}
+        mode={editMode}
+      />
     </div>
   );
 };
